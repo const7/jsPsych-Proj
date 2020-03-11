@@ -5,30 +5,18 @@
     <title>My experiment</title>
     <script src="../jspsych.js"></script>
     <script src="../plugins/jspsych-html-keyboard-response.js"></script>
-    <script src="../plugins/jspsych-psychophysics copy.js"></script>
+    <script src="../plugins/jspsych-drawing.js"></script>
     <link href="../css/jspsych.css" rel="stylesheet" type="text/css">
     </link>
 </head>
 
 <body></body>
-<canvas id="myCanvas" width="300" height="150" style="border:1px solid #d3d3d3;"></canvas>
-<script>
-    var c = document.getElementById("myCanvas");
-    var ctx = c.getContext("2d");
 
+<script>
     /* create timeline */
     var timeline = [];
 
-    // /* test psychophysics */
-
-    // // get coordinate of center
-    // var center_x = window.innerWidth / 2;
-    // var center_y = window.innerHeight / 2;
-    // // generate rectangle's width and half-height
-    // var width = Math.ceil(Math.random() * 100 + 10);
-    // var height = Math.ceil(Math.random() * 100 + 10);
-    // get coordinate of center
-
+    /* test psychophysics */
     var gradation = {
         obj_type: 'manual',
         drawFunc: function (canvas, context) {
@@ -44,7 +32,7 @@
     };
 
     var trial = {
-        type: 'psychophysics',
+        type: 'drawing',
         stimuli: [gradation],
     };
     var trial_pro = {
