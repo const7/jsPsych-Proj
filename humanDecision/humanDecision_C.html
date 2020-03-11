@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My experiment</title>
+    <script src="../jspsych.js"></script>
+    <script src="../plugins/jspsych-cloze.js"></script>
+    <script src="../plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="../plugins/jspsych-psychophysics copy.js"></script>
+    <link href="../css/jspsych.css" rel="stylesheet" type="text/css">
+    </link>
+</head>
+
+<body></body>
+
+<script>
+    /* create timeline */
+    var timeline = [];
+
+    /* welcome message */
+    var welcome = {
+        type: "html-keyboard-response",
+        stimulus: "<p>欢迎参加我们的实验，该实验是为了探索人们的社会决策行为</p>" +
+            "<p>按任意键继续</p>"
+    };
+    timeline.push(welcome);
+
+    /* instructions */
+    var instructions = {
+        type: "html-keyboard-response",
+        stimulus: "<p>在该实验中，您将于玩家B共同参加社交互动游戏.</p>" +
+            "<p>屏幕上将显示一个线段，线段两端被大小不同的矩形遮挡。</p>" +
+            "<p><strong>请确定线段的中点，越接近真实中点得分越高。</strong></p>" +
+            "<p>按任意键继续</p>",
+        /* inter-trial interval  */
+        // post_trial_gap: 2000
+    };
+    timeline.push(instructions);
+
+    /* test psychophysics */
+    var gradation = {
+        obj_type: 'manual',
+        // show_start_time: 1000,
+        // startX: 0,
+        // startY: 0,
+        drawFunc: function (stimulus, canvas, context) {
+            // stimulus.drawFunc = null;
+            // get coordinate of center
+            var center_x = Math.ceil(window.innerWidth / 2);
+            var center_y = Math.ceil(window.innerHeight / 2);
+            // generate line length
+            var line_left = Math.ceil(Math.random() * 200 + 20);
+            var line_right = Math.ceil(Math.random() * 200 + 20);
+            // pick rectangle position
+            var dis_left = Math.ceil(Math.random() * (line_left - 11) + 10);
+            var dis_right = Math.ceil(Math.random() * (line_right - 11) + 10);
+            // generate rectangle's width and half-height
+            var width_left = Math.ceil(Math.random() * 100 + 10);
+            var width_right = Math.ceil(Math.random() * 100 + 10);
+            var half_height_left = Math.ceil(Math.random() * 50 + 10);
+            var half_height_right = Math.ceil(Math.random() * 50 + 10);
+
+            // stimulus.currentX = Math.ceil(window.innerWidth / 2) - 100;
+            // stimulus.currentY = Math.ceil(window.innerHeight / 2) - 100;
+
+            // const gradLength = 200;
+            // const grad = context.createLinearGradient(0, 0, 0, gradLength);
+            // grad.addColorStop(0, 'rgb(0, 0, 0)'); // black
+            // grad.addColorStop(1, 'rgb(255, 255, 255)'); // white
+            // context.fillStyle = grad;
+
+            // draw left rectangle
+            console.log(center_x - dis_left - width_left, center_y - half_height_left, width_left, half_height_left * 2);
+            context.fillRect(center_x - dis_left - width_left, center_y - half_height_left, width_left, half_height_left * 2);
+            // draw right rectangle
+            // context.rect(center_x + dis_right, center_y - half_height_right, width_right, half_height_right * 2);
+            // draw line
+        },
+    };
+    var trial = {
+        type: 'psychophysics',
+        stimuli: [gradation],
+        response_type: "mouse",
+    };
+    timeline.push(trial);
+
+    /* bribe the judge */
+    var offer_point = {
+        type: 'cloze',
+        text: '你愿意付出多少点数给法官：%%(0-10)',
+        // check_answers: true,
+        // button_text: 'Next',
+        // mistake_fn: function () { alert("Wrong answer. Please check again.") }
+    };
+    timeline.push(offer_point);
+
+    /* start the experiment */
+    jsPsych.init({
+        timeline: timeline,
+        on_finish: function () {
+            jsPsych.data.displayData();
+        }
+    });
+</script>
+
+</html>
