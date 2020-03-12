@@ -3,10 +3,11 @@
 
 <head>
     <title>My experiment</title>
-    <script src="../jspsych.js"></script>
-    <script src="../plugins/jspsych-cloze.js"></script>
-    <script src="../plugins/jspsych-drawing.js"></script>
-    <script src="../plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="../resources/jspsych.js"></script>
+    <script src="../resources/jspsych-cloze.js"></script>
+    <script src="../resources/jspsych-drawing.js"></script>
+    <script src="../resources/jspsych-survey-text.js"></script>
+    <script src="../resources/jspsych-html-keyboard-response.js"></script>
     <link href="../css/jspsych.css" rel="stylesheet" type="text/css">
     </link>
 </head>
@@ -16,6 +17,24 @@
 <script>
     /* create timeline */
     var timeline = [];
+
+    /* player info */
+    var serial_num;        // serial_num: player's number
+    var info = {
+        type: "survey-text",
+        questions: [
+            // { prompt: "姓名：", columns: 5, required: false, name: "name" },
+            { prompt: "编号：", placeholder: "1, 2, ....", columns: 10, required: true, name: "number" },
+            // { prompt: "优势手：", placeholder: "左手或右手", columns: 5, required: false, name: "first_hand" },
+        ],
+        on_finish: function (data) {
+            serial_num = parseInt(JSON.parse(data.responses)["number"]);
+            data.number = serial_num;
+            // set seed
+            Math.seed = (serial_num % 2) ? serial_num: serial_num - 1;
+        }
+    };
+    timeline.push(info);
 
     /* welcome message */
     var welcome = {
@@ -39,8 +58,20 @@
     /* choose line midpoint */
     // midpoint: record midpoint abscissa of the line
     // line_length: length of line
+    // index: trial index
     // sum_point: player's point at each start
-    var midpoint, line_length, sum_point = 0;
+    var midpoint, line_length, index = 0, sum_point = 0;
+    
+    // generate parameters
+    Math.seededRandom = function (min, max) {
+        max = max || 1;
+        min = min || 0;
+        Math.seed = (Math.seed * 9301 + 49297) % 233280;
+        var rnd = Math.seed / 233280.0;
+        return min + rnd * (max - min);
+    };
+
+    // rects and line
     var choose = {
         type: "drawing",
         drawFunc: function (canvas, context) {
@@ -48,17 +79,17 @@
             var center_x = window.innerWidth / 2;
             var center_y = window.innerHeight / 2;
             // generate line length
-            var line_left = Math.random() * 300 + 20;
-            var line_right = Math.random() * 300 + 20;
-            // pick rectangle position
-            var dis_left = Math.random() * (line_left - 11) + 10;
-            var dis_right = Math.random() * (line_right - 11) + 10;
+            var line_left = Math.seededRandom(30, 300);
+            var line_right = Math.seededRandom(30, 300);
+            // pick intersection of rectangle and line
+            var dis_left = Math.seededRandom(30, line_left);
+            var dis_right = Math.seededRandom(30, line_right);
             // generate rectangle's width and half-height
-            var width_left = Math.random() * 200 + (line_left - dis_left);
-            var width_right = Math.random() * 200 + (line_right - dis_right);
-            var half_height_left = Math.random() * 100 + 10;
-            var half_height_right = Math.random() * 100 + 10;
-            
+            var width_left = Math.seededRandom(line_left-dis_left, 200);
+            var width_right = Math.seededRandom(line_right - dis_right, 200);
+            var half_height_left = Math.seededRandom(10, 100);
+            var half_height_right = Math.seededRandom(10, 100);
+
             midpoint = (2 * center_x + line_right - line_left) / 2;
             line_length = line_left + line_right;
 
@@ -80,7 +111,7 @@
             context.stroke();
             context.closePath();
 
-            // for test
+            // // for test
             // context.beginPath();
             // context.moveTo(midpoint, center_y - 10);
             // context.lineTo(midpoint, center_y + 10);
@@ -90,14 +121,15 @@
             // context.closePath();
         },
         response_type: "mouse",
-        on_finish: function(data) {
+        on_finish: function (data) {
             var x = parseFloat(data.click_x);
             if (x < midpoint - line_length / 2 || x > midpoint + line_length / 2) {
                 data.score = 0;
             } else {
-                data.score = Math.ceil((1 - 2 * Math.abs(x - midpoint) / line_length) * 100);
+                data.score = Math.round((1 - 2 * Math.abs(x - midpoint) / line_length) * 100);
             }
-            // add 10 point for sum_point each trial
+            // update each trial
+            index += 1;
             sum_point += 10;
         }
     };
@@ -107,17 +139,17 @@
         type: "html-keyboard-response",
         stimulus: function () {
             return "<p>你的任务得分为 (0-100)：</p><strong>" + jsPsych.data.get().last(1).values()[0].score + "</strong>" +
-             " 分" + "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>";
+                " 分" + "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>";
         }
     }
 
     /* bribe the judge */
     var bribe = {
         type: "cloze",
-        text: function() {
+        text: function () {
             return "你愿意付出多少点数给玩家C：%% (0-10)\n" + "当前剩余点数: " + sum_point;
         },
-        on_finish: function(data) {
+        on_finish: function (data) {
             answer = parseInt(data.answers[0]);
             // answer != answer ==>> answer is NaN
             if (answer != answer || answer < 0) {
@@ -125,12 +157,12 @@
             } else if (answer > 10) {
                 answer = 10;
             }
-            // save bribe to data
-            data.bribe = answer;
-            // update sum_point
+            // update var
             sum_point -= answer;
-            // save sum_point
+            // save data
+            data.bribe = answer;
             data.final_point = sum_point;
+            data.index = index;
         }
     };
 
@@ -140,11 +172,21 @@
     };
     timeline.push(trial_pro);
 
+    // // save data to local
+    // function saveData(name, data) {
+    //     var xhr = new XMLHttpRequest();
+    //     xhr.open("POST", "../resources/write_data.php"); // 'write_data.php' is the path to the php file described above.
+    //     xhr.setRequestHeader("Content-Type", "application/json");
+    //     xhr.send(JSON.stringify({ filename: name, filedata: data }));
+    // }
+
     /* start the experiment */
     jsPsych.init({
         timeline: timeline,
         on_finish: function () {
             jsPsych.data.displayData();
+            // save data
+            // saveData((new Date()).getTime().toString(), jsPsych.data.get().json());
         }
     });
 </script>

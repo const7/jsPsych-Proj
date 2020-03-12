@@ -1,1 +1,29 @@
-<div id="cf_wd_point_6"></div><script type="text/javascript" src="http://cognitivefun.net/wloader/js/6"></script>
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My experiment</title>
+    <link href="../../css/jspsych.css" rel="stylesheet" type="text/css">
+    </link>
+</head>
+
+<body></body>
+<script>
+    Math.seededRandom = function (min, max) {
+        max = max || 1;
+        min = min || 0;
+        Math.seed = (Math.seed * 9301 + 49297) % 233280;
+        var rnd = Math.seed / 233280.0;
+        return min + rnd * (max - min);
+    };
+    for (var i = 1; i <= 2; ++i) {
+        Math.seed = (i % 2) ? i : i - 1;
+        for (var j = 1; j <= 10; ++j) {
+            console.log("i=" + i + ", j=" + j + ", r=" + (Math.seededRandom(10, 100)));
+        }
+    }
+
+
+</script>
+
+</html>
