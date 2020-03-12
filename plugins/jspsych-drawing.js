@@ -21,19 +21,11 @@ jsPsych.plugins["drawing"] = (function () {
         name: 'drawing',
         description: '',
         parameters: {
-            stimuli: {
-                type: jsPsych.plugins.parameterType.COMPLEX, // This is similar to the quesions of the survey-likert. 
-                array: true,
-                pretty_name: 'Stimuli',
-                description: 'The objects will be presented in the canvas.',
-                nested: {
-                    drawFunc: {
-                        type: jsPsych.plugins.parameterType.FUNCTION,
-                        pretty_name: 'Draw function',
-                        default: null,
-                        description: 'This function enables to move objects horizontally and vertically.'
-                    },
-                }
+            drawFunc: {
+                type: jsPsych.plugins.parameterType.FUNCTION,
+                pretty_name: 'Draw function',
+                default: null,
+                description: 'This function enables to move objects horizontally and vertically.'
             },
             choices: {
                 type: jsPsych.plugins.parameterType.KEYCODE,
@@ -51,13 +43,13 @@ jsPsych.plugins["drawing"] = (function () {
             canvas_width: {
                 type: jsPsych.plugins.parameterType.INT,
                 pretty_name: 'Canvas width',
-                default: window.innerWidth,
+                default: window.innerWidth - 10,
                 description: 'The width of the canvas.'
             },
             canvas_height: {
                 type: jsPsych.plugins.parameterType.INT,
                 pretty_name: 'Canvas height',
-                default: window.innerHeight,
+                default: window.innerHeight - 10,
                 description: 'The height of the canvas.'
             },
             trial_duration: {
@@ -101,7 +93,6 @@ jsPsych.plugins["drawing"] = (function () {
         elm_jspsych_content.style.maxWidth = 'none'; // The default value is '95%'. To fit the window.
 
         let new_html = '<canvas id="myCanvas" class="jspsych-canvas" width=' + trial.canvas_width + ' height=' + trial.canvas_height + ' style="background-color:' + trial.background_color + ';"></canvas>';
-        // let new_html = '<canvas id="myCanvas" width="300" height="150" style="border:1px solid #d3d3d3;"></canvas>';
 
         const motion_rt_method = 'performance'; // 'date' or 'performance'. 'performance' is better.
         let start_time;
@@ -124,7 +115,6 @@ jsPsych.plugins["drawing"] = (function () {
                 } else {
                     start_time = performance.now();
                 }
-
                 window.addEventListener("mousedown", mouseDownFunc);
                 canvas.addEventListener("mousedown", mouseDownFunc);
             }
@@ -145,24 +135,11 @@ jsPsych.plugins["drawing"] = (function () {
         }
         const ctx = canvas.getContext('2d');
 
-        if (typeof trial.stimuli === 'undefined') {
-            alert('You have to specify the stimuli parameter in the drawing plugin.');
-        } else {
-            console.log("length:", trial.stimuli.length);
-            for (let i = 0; i < trial.stimuli.length; i++) {
-                const stim = trial.stimuli[i];
-
-                // for drawing lines, rects, circles, and texts.
-                if (stim.obj_type === 'manual') {
-                    //
-                } else {
-                    alert('You have missed to specify the obj_type property in the ' + (i + 1) + 'th object.')
-                }
-            }
+        if (typeof trial.drawFunc === 'undefined') {
+            alert('You have to specify the drawFunc parameter in the drawing plugin.');
         }
 
         function mouseDownFunc(e) {
-
             let click_time;
 
             if (motion_rt_method == 'date') {
@@ -185,16 +162,7 @@ jsPsych.plugins["drawing"] = (function () {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        for (let i = 0; i < trial.stimuli.length; i++) {
-            const stim = trial.stimuli[i];
-            if (stim.obj_type === 'manual') {
-                if (stim.drawFunc === null) {
-                    alert('You have to specify the drawFunc() when you set the obj_type parameter to manual.');
-                } else {
-                    stim.drawFunc(canvas, ctx);
-                }
-            }
-        }
+        trial.drawFunc(canvas, ctx);
 
         // store response
         var response = {
@@ -207,20 +175,6 @@ jsPsych.plugins["drawing"] = (function () {
             document.getElementById('jspsych-content').style.maxWidth = default_maxWidth; // restore
             window.removeEventListener("mousedown", mouseDownFunc);
             canvas.removeEventListener("mousedown", mouseDownFunc);
-
-            // remove end event listeners if they exist
-            for (let i = 0; i < trial.stimuli.length; i++) {
-                const stim = trial.stimuli[i];
-                //console.log(stim);
-                if (typeof stim.context !== 'undefined') {
-                    if (stim.context !== null) {
-                        stim.source.stop();
-                        stim.source.onended = function () {}
-                    } else {
-                        stim.audio.pause();
-                    }
-                }
-            }
 
             // kill any remaining setTimeout handlers
             jsPsych.pluginAPI.clearAllTimeouts();
@@ -235,7 +189,6 @@ jsPsych.plugins["drawing"] = (function () {
                 var trial_data = {
                     "rt": response.rt,
                     "response_type": trial.response_type,
-                    //"stimulus": trial.stimuli,
                     "key_press": response.key,
                     "click_x": response.clickX,
                     "click_y": response.clickY
@@ -246,7 +199,6 @@ jsPsych.plugins["drawing"] = (function () {
                 var trial_data = {
                     "rt": response.rt,
                     "response_type": trial.response_type,
-                    //"stimulus": trial.stimuli,
                     "key_press": response.key,
                 };
 
