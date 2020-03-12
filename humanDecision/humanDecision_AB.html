@@ -20,25 +20,27 @@
     /* welcome message */
     var welcome = {
         type: "html-keyboard-response",
-        stimulus: "<p>欢迎参加我们的实验，该实验是为了探索人们的社会决策行为</p><p>按任意键继续</p>"
+        stimulus: "<p>欢迎参加我们的实验，该实验是为了探索人们的社会决策行为</p><p style='font-size:.8rem;font-style:italic'>按任意键继续</p>"
     };
     timeline.push(welcome);
 
     /* instructions */
     var instructions = {
         type: "html-keyboard-response",
-        stimulus: "<p>在该实验中，您将于玩家B共同参加社交互动游戏.</p>" +
+        stimulus: "<p>在该实验中，您将与玩家B共同参加社交互动游戏.</p>" +
             "<p>屏幕上将显示一个线段，线段两端被大小不同的矩形遮挡。</p>" +
-            "<p><strong>请确定线段的中点，越接近真实中点得分越高。</strong></p>" +
-            "<p>按任意键继续</p>",
-        // post_trial_gap: 1000
+            "<p><strong>请估计线段的中点，越接近真实中点得分越高。</strong></p>" +
+            "<p>玩家C会根据你们的任务表现及xxxx判定每轮获胜者。</p>" +
+            "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>",
+        post_trial_gap: 500
     };
     timeline.push(instructions);
 
     /* choose line midpoint */
     // midpoint: record midpoint abscissa of the line
     // line_length: length of line
-    var midpoint, line_length;
+    // sum_point: player's point at each start
+    var midpoint, line_length, sum_point = 0;
     var choose = {
         type: "drawing",
         drawFunc: function (canvas, context) {
@@ -95,6 +97,8 @@
             } else {
                 data.score = Math.ceil((1 - 2 * Math.abs(x - midpoint) / line_length) * 100);
             }
+            // add 10 point for sum_point each trial
+            sum_point += 10;
         }
     };
 
@@ -102,22 +106,31 @@
     var grade = {
         type: "html-keyboard-response",
         stimulus: function () {
-            return "<p>你的任务得分为：</p><strong>" + jsPsych.data.get().last(1).values()[0].score + "</strong>" + " 分 (0-100)";
+            return "<p>你的任务得分为 (0-100)：</p><strong>" + jsPsych.data.get().last(1).values()[0].score + "</strong>" +
+             " 分" + "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>";
         }
     }
 
     /* bribe the judge */
     var bribe = {
         type: "cloze",
-        text: "你愿意付出多少点数给法官：%% (0-10)",
-        // check_answers: true,
-        // mistake_fn: function () { alert("Wrong answer. Please check again.") }
+        text: function() {
+            return "你愿意付出多少点数给玩家C：%% (0-10)\n" + "当前剩余点数: " + sum_point;
+        },
         on_finish: function(data) {
-            if (data.answers == "") {
-                data.bribe = 0;
-            } else {
-                data.bribe = parseInt(data.answers);
+            answer = parseInt(data.answers[0]);
+            // answer != answer ==>> answer is NaN
+            if (answer != answer || answer < 0) {
+                answer = 0;
+            } else if (answer > 10) {
+                answer = 10;
             }
+            // save bribe to data
+            data.bribe = answer;
+            // update sum_point
+            sum_point -= answer;
+            // save sum_point
+            data.final_point = sum_point;
         }
     };
 
