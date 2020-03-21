@@ -56,10 +56,9 @@
     timeline.push(instruction0);
     var instruction1 = {
         type: "html-keyboard-response",
-        stimulus: "<p>玩家C的角色具有赢家指定权。</p>" +
-            "<p>每轮结束时您可以选择分给玩家C一定的点数，</p>"+ 
-            "<p>玩家C会综合你们的任务表现及收到的点数判定每轮获胜者。</p>" +
-            "<p>前三次为练习实验，不计入结果。</p>" +
+        stimulus: "<p>玩家 C 的角色具有赢家指定权，每轮结束时您可以选择分给玩家 C 一定的点数，</p>"+ 
+            "<p>玩家 C 会综合你们的任务得分以及收到的点数判定每轮获胜者。</p>" +
+            "<p>前两轮为练习实验，不计入结果。</p>" +
             "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>",
     };
     timeline.push(instruction1);
@@ -139,7 +138,12 @@
             }
             // update each trial
             index += 1;
-            sum_point += 10;
+            // reset sum_point at formal exp
+            if (index == 3) {
+                sum_point = 10;
+            } else {
+                sum_point += 10;
+            }
         }
     };
 
@@ -156,7 +160,7 @@
     var bribe = {
         type: "cloze",
         text: function () {
-            return "你愿意付出多少点数给玩家C：%% (0-10)" + "<p>当前剩余可用点数: " + sum_point + "</p>";
+            return "你愿意付出多少点数给玩家 C：%% (0-10)" + "<p>当前剩余可用点数: " + sum_point + "</p>";
         },
         on_finish: function (data) {
             answer = parseInt(data.answers[0]);
@@ -177,14 +181,18 @@
 
     var trial_pro = {
         timeline: [choose, grade, bribe],
-        repetitions: 103,
+        repetitions: 102,
     };
     timeline.push(trial_pro);
 
     /* instructions */
     var finishTip = {
-    type: "html-keyboard-response",
-        stimulus: "<p>试验结束，感谢您的参与。</p>",
+        type: "html-keyboard-response",
+        stimulus: function () {
+            return "<p>试验结束，感谢您的参与。</p>" +
+                "<p>根据您的表现您可额外获得 "+ Math.ceil(5 * sum_point / (100 * 10)) + " 元行为实验奖金。</p>" +
+                "<p>您的完成码为：" + sum_point + "，请将它填写在后续调查问卷的完成码处。</p>";
+        }
     };
     timeline.push(finishTip);
 
@@ -202,7 +210,7 @@
         on_finish: function () {
             // jsPsych.data.displayData();
             // save data
-            saveData(serial_num + "-" + (new Date()).getTime().toString(), jsPsych.data.get().json());
+            saveData(serial_num + "-" + (new Date()).getTime().toString() + sum_point, jsPsych.data.get().json());
         }
     });
 </script>
