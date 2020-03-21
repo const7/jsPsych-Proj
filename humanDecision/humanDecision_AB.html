@@ -8,8 +8,8 @@
     <script src="../resources/jspsych-drawing.js"></script>
     <script src="../resources/jspsych-survey-text.js"></script>
     <script src="../resources/jspsych-html-keyboard-response.js"></script>
-    <link href="../css/jspsych.css" rel="stylesheet" type="text/css">
-    </link>
+    <link href="../css/jspsych.css" rel="stylesheet" type="text/css"></link>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
 </head>
 
 <body></body>
@@ -23,9 +23,10 @@
     var info = {
         type: "survey-text",
         questions: [
-            // { prompt: "姓名：", columns: 5, required: false, name: "name" },
-            { prompt: "编号：", placeholder: "1, 2, ....", columns: 10, required: true, name: "number" },
-            // { prompt: "优势手：", placeholder: "左手或右手", columns: 5, required: false, name: "first_hand" },
+            { prompt: "编号：", placeholder: "必填项", columns: 20, required: true, name: "number" },
+            { prompt: "姓名：", placeholder: "使用拼音，不区分大小写", columns: 20, required: false, name: "name" },
+            { prompt: "性别：", placeholder: "男/女/其他", columns: 20, required: false, name: "sex" },
+            { prompt: "年龄：", placeholder: "阿拉伯数字", columns: 20, required: false, name: "age" },
         ],
         on_finish: function (data) {
             serial_num = parseInt(JSON.parse(data.responses)["number"]);
@@ -44,16 +45,24 @@
     timeline.push(welcome);
 
     /* instructions */
-    var instructions = {
+    var instruction0 = {
         type: "html-keyboard-response",
-        stimulus: "<p>在该实验中，您将与玩家B共同参加社交互动游戏.</p>" +
-            "<p>屏幕上将显示一个线段，线段两端被大小不同的矩形遮挡。</p>" +
-            "<p><strong>请估计线段的中点，越接近真实中点得分越高。</strong></p>" +
-            "<p>玩家C会根据你们的任务表现及xxxx判定每轮获胜者。</p>" +
+        stimulus: "<p>在该实验中，您将与玩家 B 共同参加社交互动游戏。您跟玩家 B 的实验任务如下：</p>" +            
+            "<p>屏幕上将显示一条线段，线段两端各有一部分被大小不同的不透明矩形遮挡。</p>" +
+            "<p><strong>请估计线段的中点位置，并通过鼠标左键单击进行选择，越接近真实中点得分越高。</strong></p>" +
             "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>",
         post_trial_gap: 500
     };
-    timeline.push(instructions);
+    timeline.push(instruction0);
+    var instruction1 = {
+        type: "html-keyboard-response",
+        stimulus: "<p>玩家C的角色具有赢家指定权。</p>" +
+            "<p>每轮结束时您可以选择分给玩家C一定的点数，</p>"+ 
+            "<p>玩家C会综合你们的任务表现及收到的点数判定每轮获胜者。</p>" +
+            "<p>前三次为练习实验，不计入结果。</p>" +
+            "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>",
+    };
+    timeline.push(instruction1);
 
     /* choose line midpoint */
     // midpoint: record midpoint abscissa of the line
@@ -85,10 +94,10 @@
             var dis_left = Math.seededRandom(30, line_left);
             var dis_right = Math.seededRandom(30, line_right);
             // generate rectangle's width and half-height
-            var width_left = Math.seededRandom(line_left-dis_left, 200);
-            var width_right = Math.seededRandom(line_right - dis_right, 200);
-            var half_height_left = Math.seededRandom(10, 100);
-            var half_height_right = Math.seededRandom(10, 100);
+            var width_left = Math.seededRandom(line_left - dis_left, 300);
+            var width_right = Math.seededRandom(line_right - dis_right, 300);
+            var half_height_left = Math.seededRandom(20, 100);
+            var half_height_right = Math.seededRandom(20, 100);
 
             midpoint = (2 * center_x + line_right - line_left) / 2;
             line_length = line_left + line_right;
@@ -138,8 +147,8 @@
     var grade = {
         type: "html-keyboard-response",
         stimulus: function () {
-            return "<p>你的任务得分为 (0-100)：</p><strong>" + jsPsych.data.get().last(1).values()[0].score + "</strong>" +
-                " 分" + "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>";
+            return "<p>你的任务得分为 (0-100)：</p><strong>" + jsPsych.data.get().last(1).values()[0].score + "</strong> 分" +
+                "<p style='font-size:.8rem;font-style:italic'>按任意键继续</p>";
         }
     }
 
@@ -147,7 +156,7 @@
     var bribe = {
         type: "cloze",
         text: function () {
-            return "你愿意付出多少点数给玩家C：%% (0-10)\n" + "当前剩余点数: " + sum_point;
+            return "你愿意付出多少点数给玩家C：%% (0-10)" + "<p>当前剩余可用点数: " + sum_point + "</p>";
         },
         on_finish: function (data) {
             answer = parseInt(data.answers[0]);
@@ -168,25 +177,32 @@
 
     var trial_pro = {
         timeline: [choose, grade, bribe],
-        repetitions: 10,
+        repetitions: 103,
     };
     timeline.push(trial_pro);
 
-    // // save data to local
-    // function saveData(name, data) {
-    //     var xhr = new XMLHttpRequest();
-    //     xhr.open("POST", "../resources/write_data.php"); // 'write_data.php' is the path to the php file described above.
-    //     xhr.setRequestHeader("Content-Type", "application/json");
-    //     xhr.send(JSON.stringify({ filename: name, filedata: data }));
-    // }
+    /* instructions */
+    var finishTip = {
+    type: "html-keyboard-response",
+        stimulus: "<p>试验结束，感谢您的参与。</p>",
+    };
+    timeline.push(finishTip);
+
+    // save data to local
+    function saveData(name, data) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "../resources/write_data.php"); // 'write_data.php' is the path to the php file described above.
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify({ filename: name, filedata: data }));
+    };
 
     /* start the experiment */
     jsPsych.init({
         timeline: timeline,
         on_finish: function () {
-            jsPsych.data.displayData();
+            // jsPsych.data.displayData();
             // save data
-            // saveData((new Date()).getTime().toString(), jsPsych.data.get().json());
+            saveData(serial_num + "-" + (new Date()).getTime().toString(), jsPsych.data.get().json());
         }
     });
 </script>
